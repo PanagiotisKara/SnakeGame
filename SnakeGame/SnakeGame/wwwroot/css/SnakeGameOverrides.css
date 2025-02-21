@@ -1,0 +1,110 @@
+html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    color:#fff;
+    background-color: #000000 !important;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif !important;
+}
+
+#gameCanvas {
+    display: block !important;
+    margin: 50px auto !important;
+    border: 10px solid #a05b01 !important;
+    background-color: #cab53a !important;
+}
+
+.game-container {
+    position: relative;
+    width: 400px;  
+    margin: 0 auto; 
+    margin-top: 100px;
+  }
+
+  .score-timer {
+    position: absolute;
+    top: -40px;  
+    left: 0;
+    width: 100%;
+    color: #fff;      
+    font-size: 45px;  
+    text-align: center;
+    display: flex;
+    justify-content: space-between; 
+    padding: 0 10px;  
+    font-family: "Jacquard 12", serif;
+  }
+
+header {
+    background-color: #6a0dad !important; 
+    color: #fff !important;
+    padding: 10px 20px !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+}
+
+header h1 {
+    margin: 0 !important;
+    font-size: 24px !important;
+}
+
+button {
+    background-color: #6a0dad !important; 
+    color: #fff !important;
+    border: none !important;
+    padding: 10px 20px !important;
+    cursor: pointer !important;
+    font-size: 16px !important;
+    border-radius: 4px !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+}
+
+
+
+
+html, body {
+    overflow-x: hidden !important;
+}
+
+.button {
+    
+    display: block;              
+    margin: 20px auto;      
+    font-size: 24px;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    outline: none;
+    color: #fff;
+    background-color: #04AA6D;
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 9px #702a6a;
+}
+
+a:hover,
+.button:hover {
+  color:#005a99;
+}
+
+.button:active {
+  background-color: #3e8e41;
+  box-shadow: 0 5px #66305f;
+  transform: translateY(4px);
+}
+.container-fluid{
+    background-color: purple;
+}
+.top-row {
+    display: flex;
+    justify-content: center; 
+    align-items: center;    
+    height: 80px;           
+    background-color: purple; 
+}
+
+.top-row .nav-title {
+    font-size: 1rem;
+    color: white;
+    text-decoration: none;
+}

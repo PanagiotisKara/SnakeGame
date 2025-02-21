@@ -1,0 +1,178 @@
+@page "/snake"
+
+@using System
+@using System.Linq
+@using System.Threading
+@using System.Collections.Generic
+@using Microsoft.JSInterop
+
+@inject IJSRuntime JS
+
+<div class="game-container">
+  <div class="score-timer">
+    <div class="score">Score: @score</div>
+    <div class="timer">Time: @GetFormattedTime()</div>
+  </div>
+  
+  <canvas id="gameCanvas" width="400" height="400" tabindex="0" style="border:1px solid #000"></canvas>
+</div>
+
+<button class="button" @onclick="RestartGame" style="display: block; margin: 20px auto;">
+  Restart Game
+</button>
+
+@code {
+    private DotNetObjectReference<Snake>? _objectReference;
+    private IJSObjectReference? _module;
+    private List<Point> snake;
+    private Point food;
+    private int direction; 
+    private Timer? timer;
+    private int cellSize = 20;
+    private int canvasWidth = 400;
+    private int canvasHeight = 400;
+    private bool gameOver;
+    private int score;
+    private DateTime startTime;
+    private TimeSpan elapsedTimeAtGameOver = TimeSpan.Zero;
+
+    protected override void OnInitialized()
+    {
+        StartGame();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        snake = new List<Point> { new Point(2, 2) };
+        food = GenerateFood();
+        direction = 0;
+        gameOver = false;
+        score = 0;
+        startTime = DateTime.Now;
+        timer = new Timer(GameLoop, null, 0, 200);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _module = await JS.InvokeAsync<IJSObjectReference>("import", "/js/snakeGame.js");
+            _objectReference = DotNetObjectReference.Create(this);
+            await _module.InvokeVoidAsync("initialize", "gameCanvas", _objectReference);
+            Draw();
+            await JS.InvokeVoidAsync("eval", "document.getElementById('gameCanvas').focus()");
+        }
+    }
+
+    private void StartGame()
+    {
+        snake = new List<Point> { new Point(2, 2) };
+        food = GenerateFood();
+        direction = 0;
+        gameOver = false;
+        score = 0;
+        startTime = DateTime.Now;
+        timer?.Dispose();
+        timer = new Timer(GameLoop, null, 0, 200);
+    }
+
+    private async void GameLoop(object? state)
+    {
+        if (gameOver) return;
+
+        var head = snake.First();
+        Point newHead = direction switch
+        {
+            0 => new Point(head.X + 1, head.Y),
+            1 => new Point(head.X, head.Y + 1),
+            2 => new Point(head.X - 1, head.Y),
+            3 => new Point(head.X, head.Y - 1),
+            _ => head
+        };
+
+        if (newHead.X < 0 || newHead.Y < 0 ||
+            newHead.X >= canvasWidth / cellSize || newHead.Y >= canvasHeight / cellSize)
+        {
+            gameOver = true;
+            elapsedTimeAtGameOver = DateTime.Now - startTime;
+            await _module!.InvokeVoidAsync("alert", "Χτύπησες σε τοίχο!");
+            timer?.Dispose();
+            InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        if (snake.Any(p => p.X == newHead.X && p.Y == newHead.Y))
+        {
+            gameOver = true;
+            elapsedTimeAtGameOver = DateTime.Now - startTime;
+            await _module!.InvokeVoidAsync("alert", "Έφαγες την ουρά σου!");
+            timer?.Dispose();
+            InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        snake.Insert(0, newHead);
+        if (newHead.X == food.X && newHead.Y == food.Y)
+        {
+            food = GenerateFood();
+            score += 50; 
+        }
+        else
+        {
+            snake.RemoveAt(snake.Count - 1);
+        }
+
+        Draw();
+        InvokeAsync(StateHasChanged);
+    }
+
+    [JSInvokable]
+    public void ChangeDirection(int newDirection)
+    {
+        if ((direction + 2) % 4 == newDirection) return;
+        direction = newDirection;
+    }
+
+    private Point GenerateFood()
+    {
+        Random rnd = new Random();
+        int maxX = canvasWidth / cellSize;
+        int maxY = canvasHeight / cellSize;
+        Point p;
+        do
+        {
+            p = new Point(rnd.Next(0, maxX), rnd.Next(0, maxY));
+        } while (snake.Any(s => s.X == p.X && s.Y == p.Y));
+        return p;
+    }
+
+    private async void Draw()
+    {
+        if (_module != null)
+        {
+            await _module.InvokeVoidAsync("clearCanvas", "gameCanvas");
+            await _module.InvokeVoidAsync("drawSegment", "gameCanvas", "apple", "", 
+                food.X * cellSize, food.Y * cellSize, cellSize);
+            
+            var snakeJS = new { segments = snake.Select(s => new { x = s.X, y = s.Y }) };
+            var levelJS = new { tilewidth = cellSize, tileheight = cellSize };
+
+            await _module.InvokeVoidAsync("drawSnake", "gameCanvas", snakeJS, levelJS, direction);
+        }
+    }
+
+    public void RestartGame()
+    {
+        StartGame();
+        Draw();
+        _ = JS.InvokeVoidAsync("eval", "document.getElementById('gameCanvas').focus()");
+    }
+
+    private string GetFormattedTime()
+    {
+        TimeSpan elapsed = gameOver ? elapsedTimeAtGameOver : DateTime.Now - startTime;
+        return string.Format("{0:mm\\:ss}", elapsed);
+    }
+
+    public record Point(int X, int Y);
+}
